@@ -36,7 +36,7 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[Service Worker] Přijata zpráva na pozadí:', payload);
 
   const notificationTitle = payload.notification?.title || '🚀 Lékařský Protokol';
-  const notificationOptions = {            
+  const notificationOptions = {
     body: payload.notification?.body || 'Nová zpráva od admirála Jiříka',
     icon: payload.notification?.icon || 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_192x192.jpg?ver=0',
     badge: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_72x72.jpg?ver=0',
@@ -104,6 +104,5 @@ self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Service Worker aktivován');
   event.waitUntil(clients.claim()); // Převezme kontrolu nad všemi klienty
 });
-
 
 console.log('[Service Worker] Firebase Messaging Service Worker načten a připraven! 🚀');
