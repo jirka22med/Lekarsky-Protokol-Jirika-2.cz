@@ -274,8 +274,8 @@ function sendTestNotification() {
     if (Notification.permission === 'granted') {
         const notification = new Notification('🚀 Lékařský Protokol aktivní!', {
             body: 'Notifikace fungují perfektně, admirále Jiříku! 🖖',
-            icon: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_512x512_2.jpg?ver=0', // Můžeš přidat vlastní ikonu
-            badge: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_512x512_2.jpg?ver=0',
+            icon: 'https://github.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/blob/11b61.../image_192x192.png', // Můžeš přidat vlastní ikonu
+            badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
             tag: 'test-notification',
             requireInteraction: false,
             vibrate: [200, 100, 200]
@@ -504,3 +504,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("✅ jirkova-mes-zprava-o-lecich.js načten a připraven k akci!");
+
