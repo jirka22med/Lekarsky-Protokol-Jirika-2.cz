@@ -135,11 +135,9 @@ window.requestNotificationPermission = async function() {
  */
 async function getFCMToken() {
     try {
-        // VAPID klíč - tento musíš vytvořit ve Firebase Console
-        // Project Settings > Cloud Messaging > Web Push certificates
-        // 🚨 POKUD TESTUJEŠ NA LOCALHOST, FCM token nebude fungovat - to je normální!
-        // Na Firebase Hosting (HTTPS) bude vše fungovat perfektně!
-        const vapidKey = 'TVŮJ_VAPID_KLÍČ_ZDE'; // 🔥 NAHRAĎ TÍMTO SVÝM KLÍČEM!
+        // VAPID klíč z Firebase Console - Cloud Messaging
+        // ✅ KLÍČ JE NASTAVEN! FCM notifikace jsou připraveny!
+        const vapidKey = 'BEPlJPREV3rAUkaPNkM-rfeeA__X-vaw7ji_lojde4qVbOKv3j-JBr46l5Bf2ME-3BoTpev5goHrFVGuWD60YN0';
 
         fcmToken = await messaging.getToken({ 
             vapidKey: vapidKey,
