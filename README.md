@@ -1,0 +1,1 @@
+# Lekarsky-Protokol-Jirika-2.cz
