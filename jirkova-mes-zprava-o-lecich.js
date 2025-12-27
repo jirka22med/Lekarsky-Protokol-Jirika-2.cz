@@ -439,8 +439,8 @@ function setupFCMMessageListener() {
         const notificationTitle = payload.notification.title || 'Lékařský Protokol';
         const notificationOptions = {
             body: payload.notification.body || 'Nová zpráva',
-            icon: payload.notification.icon || '/icon-192x192.png',
-            badge: '/badge-72x72.png',
+            icon: payload.notification.icon || 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_192x192.jpg?ver=0',
+            badge: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_72x72.jpg?ver=0',
             tag: payload.notification.tag || 'fcm-notification',
             data: payload.data
         };
@@ -509,4 +509,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("✅ jirkova-mes-zprava-o-lecich.js načten a připraven k akci!");
+
 
