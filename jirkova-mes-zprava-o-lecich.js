@@ -72,7 +72,7 @@ window.initializeFCMNotifications = async function() {
  */
 async function registerServiceWorker() {
     try {
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
         console.log("✅ Service Worker zaregistrován:", registration);
         
         // Počkáme na aktivaci Service Workeru
@@ -504,4 +504,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("✅ jirkova-mes-zprava-o-lecich.js načten a připraven k akci!");
+
 
