@@ -38,8 +38,11 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || '🚀 Lékařský Protokol';
   const notificationOptions = {
     body: payload.notification?.body || 'Nová zpráva od admirála Jiříka',
-    icon: payload.notification?.icon || 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_192x192.jpg?ver=0',
-    badge: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_72x72.jpg?ver=0',
+    icon: payload.notification?.icon || 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
+    badge: 'new Notification("Lékařský Protokol", {
+    body: "Nezapomeň si vzít léky!",
+    icon: "https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png"
+});',
     tag: payload.notification?.tag || 'background-notification',
     requireInteraction: false,
     vibrate: [200, 100, 200],
@@ -106,3 +109,4 @@ self.addEventListener('activate', (event) => {
 });
 
 console.log('[Service Worker] Firebase Messaging Service Worker načten a připraven! 🚀');
+
