@@ -403,8 +403,8 @@ function sendMedicineNotification(title, body, type) {
 
     const notification = new Notification(title, {
         body: body,
-        icon: 'icon-192x192.png',
-        badge: 'badge-72x72.png',
+        icon: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_192x192.jpg?ver=0',
+        badge: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_72x72.jpg?ver=0',
         tag: `medicine-${type}-${Date.now()}`,
         requireInteraction: type === 'critical' || type === 'urgent',
         vibrate: type === 'critical' ? [200, 100, 200, 100, 200] : [200, 100, 200],
@@ -509,3 +509,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("✅ jirkova-mes-zprava-o-lecich.js načten a připraven k akci!");
+
