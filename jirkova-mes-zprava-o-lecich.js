@@ -72,7 +72,8 @@ window.initializeFCMNotifications = async function() {
  */
 async function registerServiceWorker() {
     try {
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        // Relativní cesta - funguje na GitHubu i localhost
+        const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
         console.log("✅ Service Worker zaregistrován:", registration);
         
         // Počkáme na aktivaci Service Workeru
@@ -136,7 +137,9 @@ async function getFCMToken() {
     try {
         // VAPID klíč - tento musíš vytvořit ve Firebase Console
         // Project Settings > Cloud Messaging > Web Push certificates
-        const vapidKey = 'BEPlJPREV3rAUkaPNkM-rfeeA__X-vaw7ji_lojde4qVbOKv3j-JBr46l5Bf2ME-3BoTpev5goHrFVGuWD60YN0'; // 🔥 NAHRAĎ TÍMTO SVÝM KLÍČEM!
+        // 🚨 POKUD TESTUJEŠ NA LOCALHOST, FCM token nebude fungovat - to je normální!
+        // Na Firebase Hosting (HTTPS) bude vše fungovat perfektně!
+        const vapidKey = 'TVŮJ_VAPID_KLÍČ_ZDE'; // 🔥 NAHRAĎ TÍMTO SVÝM KLÍČEM!
 
         fcmToken = await messaging.getToken({ 
             vapidKey: vapidKey,
@@ -157,6 +160,10 @@ async function getFCMToken() {
 
     } catch (error) {
         console.error("❌ Chyba při získávání FCM tokenu:", error);
+        // Localhost chyba je normální - FCM potřebuje HTTPS
+        if (error.code === 'messaging/token-subscribe-failed') {
+            console.warn("⚠️ FCM token se nepodařilo získat - pravděpodobně běžíš na localhost. Na Firebase Hosting (HTTPS) bude fungovat!");
+        }
         return null;
     }
 }
@@ -274,8 +281,8 @@ function sendTestNotification() {
     if (Notification.permission === 'granted') {
         const notification = new Notification('🚀 Lékařský Protokol aktivní!', {
             body: 'Notifikace fungují perfektně, admirále Jiříku! 🖖',
-            icon: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_512x512_2.jpg?ver=0', // Můžeš přidat vlastní ikonu
-            badge: 'https://img40.rajce.idnes.cz/d4003/19/19517/19517492_984d6887838eae80a8eb677199393188/images/image_512x512_2.jpg?ver=0',
+            icon: 'icon-192x192.png',
+            badge: 'badge-72x72.png',
             tag: 'test-notification',
             requireInteraction: false,
             vibrate: [200, 100, 200]
@@ -398,8 +405,8 @@ function sendMedicineNotification(title, body, type) {
 
     const notification = new Notification(title, {
         body: body,
-        icon: '/icon-192x192.png',
-        badge: '/badge-72x72.png',
+        icon: 'icon-192x192.png',
+        badge: 'badge-72x72.png',
         tag: `medicine-${type}-${Date.now()}`,
         requireInteraction: type === 'critical' || type === 'urgent',
         vibrate: type === 'critical' ? [200, 100, 200, 100, 200] : [200, 100, 200],
