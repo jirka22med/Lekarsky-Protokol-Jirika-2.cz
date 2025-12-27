@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lékařský Protokol Jiříka</title>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main>
+        <h1>🧪 Lékařský Protokol Jiříka 🧪</h1>
+
+        <div id="filter-buttons">
+            <button data-status="Všechny" class="active">Všechny léky</button>
+            <button data-status="Beru">Beru</button>
+            <button data-status="Používám">Používám</button>
+            <button data-status="Ukončeno">Ukončeno</button>
+            <button id="fullscreen-toggle" title="Celá obrazovka (F)">⛶</button>
+        </div>
+
+        <button id="add-medicine-btn">➕ Přidat lék</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Název</th>
+                    <th>Od / Do</th>
+                    <th>Status</th>
+                    <th>Odpočet</th>
+                    <th>Akce</th>
+                </tr>
+            </thead>
+            <tbody id="tabulka">
+                </tbody>
+        </table>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Lékařský Protokol Admirála Jiříka. Všechna práva vyhrazena.</p>
+    </footer>
+
+    <div id="medicine-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Přidat/Upravit lék</h2>
+            <form id="medicine-form">
+                <input type="hidden" id="medicine-id"> <div class="form-group">
+                    <label for="medicine-name">Název léku:</label>
+                    <input type="text" id="medicine-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="medicine-start-date">Od kdy:</label>
+                    <input type="date" id="medicine-start-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="medicine-end-date">Do kdy:</label>
+                    <input type="date" id="medicine-end-date">
+                </div>
+
+                <div class="form-group">
+                    <label for="medicine-status">Status:</label>
+                    <select id="medicine-status" required>
+                        <option value="Beru">Beru</option>
+                        <option value="Používám">Používám</option>
+                        <option value="Ukončeno">Ukončeno</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="medicine-color">Barva zvýraznění:</label>
+                    <select id="medicine-color">
+                        <option value="none">Žádná</option>
+                        <option value="lek-stary-beru">Zelená (Beru)</option>
+                        <option value="lek-novy-beru">Modrá (Používám)</option>
+                        <option value="lek-ukoncen">Červená (Ukončeno)</option>
+                    </select>
+                    <span id="color-preview" class="color-preview"></span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit">Uložit lék</button>
+                    <button type="button" class="cancel-btn" id="cancel-medicine-btn">Zrušit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-messaging.js"></script>
+
+ 
+ 
+    <script src="medicFirebaseFunctions.js"></script>
+    
+    <script src="script.js"></script>
+<script src="jirkova-mes-zprava-o-lecich.js"></script> 
+</body>
+</html>

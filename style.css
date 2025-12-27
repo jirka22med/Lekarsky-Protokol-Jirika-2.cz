@@ -1,0 +1,515 @@
+/* GLOBÁLNÍ NASTAVENÍ A ZÁKLADNÍ RESET PROHLÍŽEČE  */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Základní styly pro HTML a BODY */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: auto; /* Povolí automatické posuvníky pro celou stránku */
+            -webkit-overflow-scrolling: touch; /* Vylepšuje scrollování na iOS */
+        }
+
+        /* STYLY PRO BODY - ZÁKLADNÍ ROZVRŽENÍ A UKOTVENÍ FOOTERU  */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0b0f1a;
+            color: #00ffcc;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Doporučuji 100vh pro lepší chování na celé obrazovce */
+        }
+
+        /* STYLY PRO MAIN - HLAVNÍ OBSAH STRÁNKY */
+        main {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        /* STYLY PRO H1 - HLAVNÍ NADPIS STRÁNKY */
+        h1 {
+            font-size: 1.8em;
+            color: #fff;
+            margin-top: -10px;
+        }
+
+        /* Styly pro elementy #cas a #sekundy (momentálně nejsou v HTML) */
+        #cas {
+            font-size: 1.5em;
+            margin: 10px 0;
+            color: #00ffcc;
+        }
+        #sekundy {
+            color: #ff6600;
+            font-weight: bold;
+        }
+
+        /* STYLY PRO TABULKU - LÉKAŘSKÝ PROTOKOL */
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+        }
+        th, td {
+            border: 1px solid #00ffcc;
+            padding: 8px;
+            transition: background-color 0.5s ease;
+        }
+        th {
+            background: #001f1f;
+        }
+
+        /* BAREVNÉ STYLY PRO ŘÁDKY LÉKŮ (NA ZÁKLADĚ STATUSU)  */
+        .lek-stary-beru {
+            background-color: #006400; /* Zelená */
+            color: #e0ffe0;
+        }
+        .lek-novy-beru {
+            background-color: #000080; /* Modrá */
+            color: #e0e0ff;
+        }
+        .lek-ukoncen {
+            background-color: #8B0000; /* Červená */
+            color: #FFB6C1;
+        }
+
+        /* STYLY PRO FILTRAČNÍ TLAČÍTKA */
+        #filter-buttons {
+            margin-bottom: 20px;
+        }
+        #filter-buttons button {
+            background-color: #002b36;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            padding: 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            border-radius: 5px;
+        }
+        #filter-buttons button:hover {
+            background-color: #005f6b;
+            color: #fff;
+        }
+        #filter-buttons button.active {
+            background-color: #00ffcc;
+            color: #0b0f1a;
+            font-weight: bold;
+        }
+
+        /* PŮVODNÍ STYLY PRO HIGHLIGHT / NEXT-DOSE (MOMENTÁLNĚ NEVYUŽITO PŘÍMO)  */
+        tr.highlight {
+            background-color: #ff0066;
+            color: #fff;
+            font-weight: bold;
+            animation: blink 1s infinite alternate;
+        }
+        @keyframes blink {
+            from { background-color: #ff0066; }
+            to { background-color: #880033; }
+        }
+        tr.next-dose {
+            background-color: #003333;
+            color: #ffff00;
+        }
+
+        /* STYLY PRO FOOTER (PATIČKU) */
+        footer {
+            background-color: #001f1f;
+            color: #00ffcc;
+            padding: 2px;
+            text-align: center;
+            border-top: 2px solid #00ffcc;
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        /* STYLY PRO FULLSCREEN TOGGLE BUTTON */
+        #fullscreen-toggle {
+            background-color: #2a2a2a;
+            color: #00ffcc;
+            border: 2px solid #00ffcc;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
+            outline: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #fullscreen-toggle:hover {
+            background-color: #00ffcc;
+            color: #2a2a2a;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.9);
+            transform: scale(1.05);
+        }
+
+        #fullscreen-toggle:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+        }
+
+        #fullscreen-toggle:focus {
+            border: 2px solid #ff6600;
+            box-shadow: 0 0 20px rgba(255, 102, 0, 0.7);
+        }
+
+        /* STYLY PRO TLAČÍTKO "PŘIDAT LÉK" */
+        #add-medicine-btn {
+            background-color: #00aaff; /* Světle modrá, jako v trackeru */
+            color: #0b0f1a;
+            border: 1px solid #00aaff;
+            padding: 10px 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 170, 255, 0.4);
+            font-weight: bold;
+        }
+
+        #add-medicine-btn:hover {
+            background-color: #00ccff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 170, 255, 0.6);
+        }
+
+        #add-medicine-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 170, 255, 0.3);
+        }
+
+
+        /* Styly pro MODAL (formulář) */
+        .modal-overlay {
+            display: none; 
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Tmavší průhledné pozadí */
+            justify-content: center; 
+            align-items: center; 
+            backdrop-filter: blur(5px); /* Rozmazané pozadí */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .modal-content {
+            background-color: #1f2633; /* Tmavé pozadí jako karty v trackeru */
+            margin: auto;
+            padding: 30px;
+            border: 2px solid #00d9ff; /* Světle modrý rámeček */
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 25px rgba(0, 217, 255, 0.5); /* Neonový stín */
+            position: relative;
+            animation: slideIn 0.4s ease-out forwards;
+            color: #f0f0f0; /* Světlá barva textu */
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            color: #00ff99; /* Zelený nadpis */
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            text-shadow: 0 0 10px rgba(0, 255, 153, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00d9ff; /* Světle modré popisky */
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group select {
+            width: calc(100% - 20px); /* Odečteme padding */
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background-color: #0d1117; /* Tmavé pozadí inputů */
+            color: #f0f0f0; /* Světlý text inputů */
+            font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="date"]:focus,
+        .form-group select:focus {
+            border-color: #00d9ff;
+            box-shadow: 0 0 8px rgba(0, 217, 255, 0.7);
+            outline: none;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-left: 10px;
+            transform: scale(1.3);
+            vertical-align: middle;
+            accent-color: #00d9ff; /* Barva zaškrtávacího políčka */
+        }
+
+        .modal-actions {
+            text-align: right;
+            margin-top: 30px;
+        }
+
+        .modal-actions button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .modal-actions button[type="submit"] {
+            background-color: #00ff99; /* Zelené tlačítko pro uložení */
+            color: #0b0f1a;
+            box-shadow: 0 4px 8px rgba(0, 255, 153, 0.4);
+        }
+
+        .modal-actions button[type="submit"]:hover {
+            background-color: #00cc88;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 255, 153, 0.6);
+        }
+
+        .modal-actions button.cancel-btn {
+            background-color: #ff5555; /* Červené tlačítko pro zrušení */
+            color: #f0f0f0;
+            box-shadow: 0 4px 8px rgba(255, 85, 85, 0.4);
+        }
+
+        .modal-actions button.cancel-btn:hover {
+            background-color: #cc4444;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(255, 85, 85, 0.6);
+        }
+        
+        /* Barvy pro zvýraznění v inputu */
+        .color-preview {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 1px solid #ccc;
+            vertical-align: middle;
+            margin-left: 10px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .color-preview.green { background-color: #006400; }
+        .color-preview.blue { background-color: #000080; }
+        .color-preview.red { background-color: #8B0000; }
+
+
+        @keyframes neonPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 204, 1); }
+        }
+
+        /* RESPONSIVNÍ DESIGN - MEDIA QUERIES */
+        
+        /* Mobilní zařízení - úpravy pro fullscreen režim */
+        @media screen and (max-width: 768px) {
+            main {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.4em;
+                margin-top: 5px;
+                margin-bottom: 15px;
+            }
+            
+            #filter-buttons {
+                margin-bottom: 15px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px;
+            }
+            
+            #filter-buttons button, #add-medicine-btn {
+                padding: 8px 12px;
+                font-size: 0.9em;
+                min-width: auto;
+            }
+            
+            #fullscreen-toggle {
+                padding: 8px 12px;
+                font-size: 1.2em;
+            }
+            
+            /* Klíčové úpravy pro tabulku na mobilu */
+            table {
+                width: 95%;
+                font-size: 0.85em;
+                margin: 10px auto;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+                font-size: 0.8em;
+                word-wrap: break-word;
+                vertical-align: top;
+            }
+            
+            /* Specifické šířky sloupců pro lepší zobrazení */
+            th:nth-child(1), td:nth-child(1) { width: 35%; } /* Název */
+            th:nth-child(2), td:nth-child(2) { width: 25%; } /* Od/Do */
+            th:nth-child(3), td:nth-child(3) { width: 15%; } /* Status */
+            th:nth-child(4), td:nth-child(4) { width: 25%; } /* Odpočet */
+            
+            footer {
+                padding: 10px 5px;
+                font-size: 0.8em;
+            }
+
+            /* Mobilní styly pro formulář */
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            .modal-content h2 {
+                font-size: 1.5em;
+                margin-bottom: 15px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                font-size: 1em;
+            }
+
+            .form-group input[type="text"],
+            .form-group input[type="date"],
+            .form-group select {
+                width: calc(100% - 16px); /* Přizpůsobení paddingu */
+                padding: 8px;
+                border-radius: 6px;
+            }
+
+            .modal-actions button {
+                padding: 10px 20px;
+                font-size: 1em;
+                margin-left: 5px;
+                border-radius: 6px;
+            }
+        }
+        
+        /* Extra malé mobily */
+        @media screen and (max-width: 480px) {
+            table {
+                width: 98%;
+                font-size: 0.75em;
+            }
+            
+            th, td {
+                padding: 4px 2px;
+                font-size: 0.75em;
+            }
+            
+            h1 {
+                font-size: 1.2em;
+            }
+            
+            #filter-buttons button, #add-medicine-btn {
+                padding: 6px 8px;
+                font-size: 0.8em;
+            }
+            
+            #fullscreen-toggle {
+                padding: 6px 10px;
+                font-size: 1.1em;
+            }
+
+            .modal-content {
+                padding: 15px;
+            }
+
+            .modal-content h2 {
+                font-size: 1.3em;
+            }
+
+            .form-group label {
+                font-size: 0.9em;
+            }
+
+            .form-group input[type="text"],
+            .form-group input[type="date"],
+            .form-group select {
+                padding: 6px;
+            }
+
+            .modal-actions button {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+        }
+        
+        /* Fullscreen specifické úpravy pro mobil */
+        @media screen and (max-width: 768px) {
+            body:fullscreen main,
+            body:-webkit-full-screen main,
+            body:-moz-full-screen main {
+                padding: 5px;
+            }
+            
+            body:fullscreen table,
+            body:-webkit-full-screen table,
+            body:-moz-full-screen table {
+                width: 99%;
+                margin: 5px auto;
+            }
+            
+            body:fullscreen h1,
+            body:-webkit-full-screen h1,
+            body:-moz-full-screen h1 {
+                font-size: 1.3em;
+                margin: 5px 0 10px 0;
+            }
+        }
