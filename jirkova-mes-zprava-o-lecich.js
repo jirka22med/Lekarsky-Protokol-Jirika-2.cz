@@ -72,6 +72,7 @@ window.initializeFCMNotifications = async function() {
  */
 async function registerServiceWorker() {
     try {
+        // Relativní cesta - funguje na GitHubu i localhost
         const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
         console.log("✅ Service Worker zaregistrován:", registration);
         
@@ -108,7 +109,7 @@ window.requestNotificationPermission = async function() {
             updateNotificationButton(true);
             
             // Odešleme testovací notifikaci
-            sendTestNotification();
+            await sendTestNotification();
             
         } else if (permission === 'denied') {
             console.log("❌ Notifikace zamítnuty!");
@@ -134,9 +135,9 @@ window.requestNotificationPermission = async function() {
  */
 async function getFCMToken() {
     try {
-        // VAPID klíč - tento musíš vytvořit ve Firebase Console
-        // Project Settings > Cloud Messaging > Web Push certificates
-        const vapidKey = 'BEPlJPREV3rAUkaPNkM-rfeeA__X-vaw7ji_lojde4qVbOKv3j-JBr46l5Bf2ME-3BoTpev5goHrFVGuWD60YN0'; // 🔥 NAHRAĎ TÍMTO SVÝM KLÍČEM!
+        // VAPID klíč z Firebase Console - Cloud Messaging
+        // ✅ KLÍČ JE NASTAVEN! FCM notifikace jsou připraveny!
+        const vapidKey = 'BEPlJPREV3rAUkaPNkM-rfeeA__X-vaw7ji_lojde4qVbOKv3j-JBr46l5Bf2ME-3BoTpev5goHrFVGuWD60YN0';
 
         fcmToken = await messaging.getToken({ 
             vapidKey: vapidKey,
@@ -157,6 +158,10 @@ async function getFCMToken() {
 
     } catch (error) {
         console.error("❌ Chyba při získávání FCM tokenu:", error);
+        // Localhost chyba je normální - FCM potřebuje HTTPS
+        if (error.code === 'messaging/token-subscribe-failed') {
+            console.warn("⚠️ FCM token se nepodařilo získat - pravděpodobně běžíš na localhost. Na Firebase Hosting (HTTPS) bude fungovat!");
+        }
         return null;
     }
 }
@@ -269,24 +274,31 @@ function updateNotificationButton(enabled) {
 /**
  * @function sendTestNotification
  * @description Pošle testovací notifikaci pro ověření funkčnosti
+ * OPRAVA: Používá Service Worker API pro podporu mobilů
  */
-function sendTestNotification() {
-    if (Notification.permission === 'granted') {
-        const notification = new Notification('🚀 Lékařský Protokol aktivní!', {
+async function sendTestNotification() {
+    if (Notification.permission !== 'granted') return;
+
+    try {
+        // Získáme Service Worker registraci
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Na mobilu MUSÍME použít showNotification() místo new Notification()
+        await registration.showNotification('🚀 Lékařský Protokol aktivní!', {
             body: 'Notifikace fungují perfektně, admirále Jiříku! 🖖',
-            icon: 'https://github.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/blob/11b61.../image_192x192.png', // Můžeš přidat vlastní ikonu
+            icon: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
             badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
             tag: 'test-notification',
             requireInteraction: false,
-            vibrate: [200, 100, 200]
+            vibrate: [200, 100, 200],
+            data: {
+                url: window.location.href
+            }
         });
 
-        notification.onclick = function() {
-            window.focus();
-            this.close();
-        };
-
         console.log("✅ Testovací notifikace odeslána");
+    } catch (error) {
+        console.error("❌ Chyba při odesílání testovací notifikace:", error);
     }
 }
 
@@ -381,45 +393,51 @@ async function checkMedicineExpirations() {
 /**
  * @function sendMedicineNotification
  * @description Pošle notifikaci o léku
+ * OPRAVA: Používá Service Worker API pro podporu mobilů
  */
-function sendMedicineNotification(title, body, type) {
+async function sendMedicineNotification(title, body, type) {
     if (Notification.permission !== 'granted') return;
 
-    // Ikony podle typu notifikace
-    const icons = {
-        'warning': '⚠️',
-        'urgent': '🚨',
-        'critical': '🔴',
-        'expired': '❌',
-        'info': 'ℹ️'
-    };
+    try {
+        // Získáme Service Worker registraci
+        const registration = await navigator.serviceWorker.ready;
+        
+        // Ikony podle typu notifikace
+        const icons = {
+            'warning': '⚠️',
+            'urgent': '🚨',
+            'critical': '🔴',
+            'expired': '❌',
+            'info': 'ℹ️'
+        };
 
-    const icon = icons[type] || 'ℹ️';
+        const icon = icons[type] || 'ℹ️';
 
-    const notification = new Notification(title, {
-        body: body,
-        icon: '/icon-192x192.png',
-        badge: '/badge-72x72.png',
-        tag: `medicine-${type}-${Date.now()}`,
-        requireInteraction: type === 'critical' || type === 'urgent',
-        vibrate: type === 'critical' ? [200, 100, 200, 100, 200] : [200, 100, 200],
-        data: {
-            type: type,
-            timestamp: Date.now()
-        }
-    });
+        // Na mobilu MUSÍME použít showNotification()
+        await registration.showNotification(title, {
+            body: body,
+            icon: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
+            badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
+            tag: `medicine-${type}-${Date.now()}`,
+            requireInteraction: type === 'critical' || type === 'urgent',
+            vibrate: type === 'critical' ? [200, 100, 200, 100, 200] : [200, 100, 200],
+            data: {
+                type: type,
+                timestamp: Date.now(),
+                url: window.location.href
+            }
+        });
 
-    notification.onclick = function() {
-        window.focus();
-        this.close();
-    };
-
-    console.log(`📤 Notifikace odeslána: ${type} - ${title}`);
+        console.log(`📤 Notifikace odeslána: ${type} - ${title}`);
+    } catch (error) {
+        console.error(`❌ Chyba při odesílání notifikace: ${error}`);
+    }
 }
 
 /**
  * @function setupFCMMessageListener
  * @description Nastaví posluchač pro příchozí FCM zprávy
+ * OPRAVA: Používá Service Worker API pro zobrazení notifikací
  */
 function setupFCMMessageListener() {
     if (!messaging) {
@@ -428,21 +446,26 @@ function setupFCMMessageListener() {
     }
 
     // Posluchač pro zprávy když je aplikace v popředí
-    messaging.onMessage((payload) => {
+    messaging.onMessage(async (payload) => {
         console.log("📩 Přijata FCM zpráva:", payload);
 
-        const notificationTitle = payload.notification.title || 'Lékařský Protokol';
+        const notificationTitle = payload.notification?.title || 'Lékařský Protokol';
         const notificationOptions = {
-            body: payload.notification.body || 'Nová zpráva',
-            icon: payload.notification.icon || '/icon-192x192.png',
-            badge: '/badge-72x72.png',
-            tag: payload.notification.tag || 'fcm-notification',
+            body: payload.notification?.body || 'Nová zpráva',
+            icon: payload.notification?.icon || 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
+            badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
+            tag: payload.notification?.tag || 'fcm-notification',
             data: payload.data
         };
 
-        // Zobrazíme notifikaci
+        // Zobrazíme notifikaci přes Service Worker (funguje i na mobilu)
         if (Notification.permission === 'granted') {
-            new Notification(notificationTitle, notificationOptions);
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification(notificationTitle, notificationOptions);
+            } catch (error) {
+                console.error("❌ Chyba při zobrazení notifikace:", error);
+            }
         }
     });
 
@@ -504,5 +527,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("✅ jirkova-mes-zprava-o-lecich.js načten a připraven k akci!");
-
-
