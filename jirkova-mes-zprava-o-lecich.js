@@ -58,8 +58,12 @@ window.initializeFCMNotifications = async function() {
         // Vytvoření UI pro notifikace
         createNotificationUI();
 
-        // Spuštění kontroly expirací
-        startExpirationMonitoring();
+        // Počkáme na načtení dat z Firestore
+        // Kontrola se spustí až když budou data připravena
+        waitForMedicinesData().then(() => {
+            // Spuštění kontroly expirací
+            startExpirationMonitoring();
+        });
 
         console.log("🚀 FCM notifikační systém plně operační!");
         return true;
@@ -293,6 +297,36 @@ async function sendTestNotification() {
     } catch (error) {
         console.error("❌ Chyba při odesílání testovací notifikace:", error);
     }
+}
+
+/**
+ * @function waitForMedicinesData
+ * @description Počká na načtení dat z Firestore
+ */
+async function waitForMedicinesData() {
+    return new Promise((resolve) => {
+        // Pokud data již jsou, vyřešíme hned
+        if (window.currentMedicines && window.currentMedicines.length > 0) {
+            console.log("📋 Data léků již načtena, spouštím monitoring");
+            resolve();
+            return;
+        }
+
+        // Jinak počkáme max 10 sekund
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (window.currentMedicines && window.currentMedicines.length > 0) {
+                console.log("📋 Data léků načtena, spouštím monitoring");
+                clearInterval(checkInterval);
+                resolve();
+            } else if (attempts >= 20) {
+                console.warn("⚠️ Data léků se nenačetla do 10 sekund, spouštím monitoring stejně");
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 500); // Kontrola každých 500ms
+    });
 }
 
 /**
