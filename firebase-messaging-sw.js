@@ -38,8 +38,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || '🚀 Lékařský Protokol';
   const notificationOptions = {
     body: payload.notification?.body || 'Nová zpráva od admirála Jiříka',
-    icon: payload.notification?.icon || '/icon-192x192.png',
-    badge: '/badge-72x72.png',
+    icon: payload.notification?.icon || 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
+    badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
     tag: payload.notification?.tag || 'background-notification',
     requireInteraction: false,
     vibrate: [200, 100, 200],
