@@ -1,19 +1,24 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * 🚀 JIŘÍKŮV LÉKAŘSKÝ NOTIFIKAČNÍ SYSTÉM - FCM MODUL 🚀
+ * 🚀 JIŘÍKŮV LÉKAŘSKÝ NOTIFIKAČNÍ SYSTÉM - FCM MODUL V2.0 🚀
  * ═══════════════════════════════════════════════════════════════
- * Tento modul využívá Firebase Cloud Messaging pro zasílání
- * notifikací o lécích přímo do prohlížeče.
- * Admirál Jiřík bude informován i když je prohlížeč zavřený!
+ * VYLEPŠENÁ VERZE - Inteligentní notifikace o lécích
+ * - Denní přehled aktivních léků
+ * - Upozornění na expiraci
+ * - Ignoruje ukončené léky
+ * - Podporuje "Beru" i "Používám"
  * ═══════════════════════════════════════════════════════════════
  */
 
-console.log("🚀 JIŘÍKŮV FCM MODUL: Inicializace torpédového systému notifikací...");
+console.log("🚀 JIŘÍKŮV FCM MODUL V2.0: Inicializace torpédového systému notifikací...");
 
 // Globální proměnné pro FCM
 let messaging = null;
 let notificationPermission = 'default';
 let fcmToken = null;
+
+// Sledování odeslaných notifikací (aby se neopakovaly)
+let sentNotifications = new Set();
 
 /**
  * @function initializeFCMNotifications
@@ -136,7 +141,6 @@ window.requestNotificationPermission = async function() {
 async function getFCMToken() {
     try {
         // VAPID klíč z Firebase Console - Cloud Messaging
-        // ✅ KLÍČ JE NASTAVEN! FCM notifikace jsou připraveny!
         const vapidKey = 'BEPlJPREV3rAUkaPNkM-rfeeA__X-vaw7ji_lojde4qVbOKv3j-JBr46l5Bf2ME-3BoTpev5goHrFVGuWD60YN0';
 
         fcmToken = await messaging.getToken({ 
@@ -146,10 +150,7 @@ async function getFCMToken() {
 
         if (fcmToken) {
             console.log("✅ FCM Token získán:", fcmToken);
-            
-            // Uložíme token do Firestore pro pozdější použití
             await saveFCMTokenToFirestore(fcmToken);
-            
             return fcmToken;
         } else {
             console.log("❌ Nepodařilo se získat FCM token");
@@ -158,9 +159,8 @@ async function getFCMToken() {
 
     } catch (error) {
         console.error("❌ Chyba při získávání FCM tokenu:", error);
-        // Localhost chyba je normální - FCM potřebuje HTTPS
         if (error.code === 'messaging/token-subscribe-failed') {
-            console.warn("⚠️ FCM token se nepodařilo získat - pravděpodobně běžíš na localhost. Na Firebase Hosting (HTTPS) bude fungovat!");
+            console.warn("⚠️ FCM token se nepodařilo získat - pravděpodobně běžíš na localhost.");
         }
         return null;
     }
@@ -230,8 +230,6 @@ function createNotificationUI() {
     });
 
     filterButtons.appendChild(notifButton);
-    
-    // Zkontrolujeme aktuální stav povolení
     checkCurrentPermission();
 }
 
@@ -242,7 +240,7 @@ function createNotificationUI() {
 function checkCurrentPermission() {
     if (Notification.permission === 'granted') {
         updateNotificationButton(true);
-        getFCMToken(); // Získáme token pokud už jsou notifikace povoleny
+        getFCMToken();
     } else if (Notification.permission === 'denied') {
         updateNotificationButton(false);
     }
@@ -274,16 +272,13 @@ function updateNotificationButton(enabled) {
 /**
  * @function sendTestNotification
  * @description Pošle testovací notifikaci pro ověření funkčnosti
- * OPRAVA: Používá Service Worker API pro podporu mobilů
  */
 async function sendTestNotification() {
     if (Notification.permission !== 'granted') return;
 
     try {
-        // Získáme Service Worker registraci
         const registration = await navigator.serviceWorker.ready;
         
-        // Na mobilu MUSÍME použít showNotification() místo new Notification()
         await registration.showNotification('🚀 Lékařský Protokol aktivní!', {
             body: 'Notifikace fungují perfektně, admirále Jiříku! 🖖',
             icon: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
@@ -291,9 +286,7 @@ async function sendTestNotification() {
             tag: 'test-notification',
             requireInteraction: false,
             vibrate: [200, 100, 200],
-            data: {
-                url: window.location.href
-            }
+            data: { url: window.location.href }
         });
 
         console.log("✅ Testovací notifikace odeslána");
@@ -310,7 +303,7 @@ function startExpirationMonitoring() {
     console.log("📊 Spouštím monitoring expirace léků...");
 
     // Kontrola každých 6 hodin
-    const checkInterval = 6 * 60 * 60 * 1000; // 6 hodin v milisekundách
+    const checkInterval = 6 * 60 * 60 * 1000;
 
     // První kontrola ihned
     checkMedicineExpirations();
@@ -326,6 +319,7 @@ function startExpirationMonitoring() {
 /**
  * @function checkMedicineExpirations
  * @description Kontroluje expiraci léků a odesílá notifikace
+ * NOVÁ LOGIKA: Ignoruje "Ukončeno", hlásí "Beru" a "Používám"
  */
 async function checkMedicineExpirations() {
     console.log("🔍 Kontroluji expiraci léků...");
@@ -337,12 +331,23 @@ async function checkMedicineExpirations() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayKey = today.toDateString();
 
     // Získáme aktuální léky z globální proměnné
     const medicines = window.currentMedicines || [];
 
-    medicines.forEach(medicine => {
-        if (!medicine.endDate) return; // Přeskočíme léky bez koncového data
+    // FILTRUJEME: Pouze "Beru" a "Používám"
+    const activeMedicines = medicines.filter(medicine => 
+        medicine.status === 'Beru' || medicine.status === 'Používám'
+    );
+
+    console.log(`📋 Aktivních léků k monitorování: ${activeMedicines.length}`);
+
+    activeMedicines.forEach(medicine => {
+        if (!medicine.endDate) {
+            console.log(`ℹ️ ${medicine.name} - bez koncového data, přeskakuji`);
+            return;
+        }
 
         const endDate = new Date(medicine.endDate);
         endDate.setHours(0, 0, 0, 0);
@@ -350,40 +355,51 @@ async function checkMedicineExpirations() {
         const diffTime = endDate.getTime() - today.getTime();
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
+        // Vytvoříme unikátní klíč pro notifikaci
+        const notifKey = `${medicine.id}-${diffDays}-${todayKey}`;
+
         // Notifikace 7 dní před skončením
-        if (diffDays === 7) {
+        if (diffDays === 7 && !sentNotifications.has(notifKey)) {
             sendMedicineNotification(
-                `⚠️ Lék ${medicine.name} končí za týden!`,
-                `Zbývá 7 dní do skončení léku "${medicine.name}". Připrav si recept na nový!`,
-                'warning'
+                `⚠️ Lék končí za týden`,
+                `${medicine.name}\nZbývá 7 dní do dobrání.\nPřiprav si recept na nový!`,
+                'warning',
+                medicine
             );
+            sentNotifications.add(notifKey);
         }
 
         // Notifikace 3 dny před skončením
-        if (diffDays === 3) {
+        if (diffDays === 3 && !sentNotifications.has(notifKey)) {
             sendMedicineNotification(
-                `🚨 Lék ${medicine.name} končí za 3 dny!`,
-                `Pozor! Lék "${medicine.name}" brzy doběhne. Zajisti si nový včas!`,
-                'urgent'
+                `🚨 Lék brzy končí!`,
+                `${medicine.name}\nZbývají jen 3 dny!\nZajisti si nový VČAS, admirále!`,
+                'urgent',
+                medicine
             );
+            sentNotifications.add(notifKey);
         }
 
         // Notifikace v den skončení
-        if (diffDays === 0) {
+        if (diffDays === 0 && !sentNotifications.has(notifKey)) {
             sendMedicineNotification(
-                `🔴 Lék ${medicine.name} končí DNES!`,
-                `Dnes je poslední den léku "${medicine.name}". Nezapomeň si zajistit náhradu!`,
-                'critical'
+                `🔴 Lék končí DNES!`,
+                `${medicine.name}\nDnes je poslední den!\nNezapomeň si zajistit náhradu!`,
+                'critical',
+                medicine
             );
+            sentNotifications.add(notifKey);
         }
 
-        // Notifikace po skončení (1 den po)
-        if (diffDays === -1) {
+        // Notifikace 1 den po skončení
+        if (diffDays === -1 && !sentNotifications.has(notifKey)) {
             sendMedicineNotification(
-                `❌ Lék ${medicine.name} skončil včera!`,
-                `Lék "${medicine.name}" již není k dispozici. Doplň si zásoby, admirále!`,
-                'expired'
+                `❌ Lék skončil včera!`,
+                `${medicine.name}\nLék již není k dispozici.\nDoplň si zásoby, admirále!`,
+                'expired',
+                medicine
             );
+            sentNotifications.add(notifKey);
         }
     });
 
@@ -393,51 +409,38 @@ async function checkMedicineExpirations() {
 /**
  * @function sendMedicineNotification
  * @description Pošle notifikaci o léku
- * OPRAVA: Používá Service Worker API pro podporu mobilů
  */
-async function sendMedicineNotification(title, body, type) {
+async function sendMedicineNotification(title, body, type, medicine) {
     if (Notification.permission !== 'granted') return;
 
     try {
-        // Získáme Service Worker registraci
         const registration = await navigator.serviceWorker.ready;
-        
-        // Ikony podle typu notifikace
-        const icons = {
-            'warning': '⚠️',
-            'urgent': '🚨',
-            'critical': '🔴',
-            'expired': '❌',
-            'info': 'ℹ️'
-        };
 
-        const icon = icons[type] || 'ℹ️';
-
-        // Na mobilu MUSÍME použít showNotification()
         await registration.showNotification(title, {
             body: body,
             icon: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
             badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
-            tag: `medicine-${type}-${Date.now()}`,
+            tag: `medicine-${type}-${medicine.id}`,
             requireInteraction: type === 'critical' || type === 'urgent',
             vibrate: type === 'critical' ? [200, 100, 200, 100, 200] : [200, 100, 200],
             data: {
                 type: type,
+                medicineId: medicine.id,
+                medicineName: medicine.name,
                 timestamp: Date.now(),
                 url: window.location.href
             }
         });
 
-        console.log(`📤 Notifikace odeslána: ${type} - ${title}`);
+        console.log(`📤 Notifikace odeslána: ${type} - ${medicine.name}`);
     } catch (error) {
-        console.error(`❌ Chyba při odesílání notifikace: ${error}`);
+        console.error(`❌ Chyba při odesílání notifikace:`, error);
     }
 }
 
 /**
  * @function setupFCMMessageListener
  * @description Nastaví posluchač pro příchozí FCM zprávy
- * OPRAVA: Používá Service Worker API pro zobrazení notifikací
  */
 function setupFCMMessageListener() {
     if (!messaging) {
@@ -445,7 +448,6 @@ function setupFCMMessageListener() {
         return;
     }
 
-    // Posluchač pro zprávy když je aplikace v popředí
     messaging.onMessage(async (payload) => {
         console.log("📩 Přijata FCM zpráva:", payload);
 
@@ -458,7 +460,6 @@ function setupFCMMessageListener() {
             data: payload.data
         };
 
-        // Zobrazíme notifikaci přes Service Worker (funguje i na mobilu)
         if (Notification.permission === 'granted') {
             try {
                 const registration = await navigator.serviceWorker.ready;
@@ -474,7 +475,8 @@ function setupFCMMessageListener() {
 
 /**
  * @function scheduleDailyReminder
- * @description Naplánuje denní připomínku (např. každé ráno v 8:00)
+ * @description Naplánuje denní připomínku s přehledem aktivních léků
+ * NOVÁ VERZE: Zobrazuje seznam léků "Beru" a "Používám" se zbývajícími dny
  */
 function scheduleDailyReminder() {
     const now = new Date();
@@ -491,11 +493,7 @@ function scheduleDailyReminder() {
     const timeUntilReminder = targetTime.getTime() - now.getTime();
     
     setTimeout(() => {
-        sendMedicineNotification(
-            '🌅 Dobré ráno, admirále!',
-            'Nezapomeň zkontrolovat svůj lékařský protokol a vzít si předepsané léky! 💊',
-            'info'
-        );
+        sendDailyMedicineReminder();
         
         // Naplánujeme další připomínku za 24 hodin
         scheduleDailyReminder();
@@ -504,26 +502,104 @@ function scheduleDailyReminder() {
     console.log(`⏰ Denní připomínka naplánována na: ${targetTime.toLocaleString('cs-CZ')}`);
 }
 
+/**
+ * @function sendDailyMedicineReminder
+ * @description Pošle denní přehled aktivních léků
+ * NOVÁ FUNKCE: Inteligentní přehled léků k užití
+ */
+async function sendDailyMedicineReminder() {
+    if (Notification.permission !== 'granted') return;
+
+    const medicines = window.currentMedicines || [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Filtrujeme pouze "Beru" a "Používám"
+    const activeMedicines = medicines.filter(medicine => 
+        medicine.status === 'Beru' || medicine.status === 'Používám'
+    );
+
+    if (activeMedicines.length === 0) {
+        console.log("ℹ️ Žádné aktivní léky k připomínce");
+        return;
+    }
+
+    // Vytvoříme seznam léků s počtem zbývajících dní
+    let medicineList = '';
+    let warningList = '';
+
+    activeMedicines.forEach(medicine => {
+        const emoji = medicine.status === 'Beru' ? '💊' : '🔵';
+        
+        if (medicine.endDate) {
+            const endDate = new Date(medicine.endDate);
+            endDate.setHours(0, 0, 0, 0);
+            const diffTime = endDate.getTime() - today.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            
+            medicineList += `${emoji} ${medicine.name} - zbývá ${diffDays} dní\n`;
+            
+            // Přidáme varování pro léky končící brzy
+            if (diffDays <= 7 && diffDays > 0) {
+                warningList += `⚠️ ${medicine.name} - zbývá ${diffDays} dní\n`;
+            } else if (diffDays <= 0) {
+                warningList += `🔴 ${medicine.name} - SKONČENO!\n`;
+            }
+        } else {
+            // Lék bez koncového data
+            medicineList += `${emoji} ${medicine.name} - dlouhodobě\n`;
+        }
+    });
+
+    // Sestavíme zprávu
+    let notificationBody = `🌅 Dobré ráno, admirále!\n\n`;
+    notificationBody += `Dnes užíváš:\n${medicineList}`;
+    
+    if (warningList) {
+        notificationBody += `\n⚠️ Upozornění:\n${warningList}`;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        
+        await registration.showNotification('🌅 Ranní přehled léků', {
+            body: notificationBody.trim(),
+            icon: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_192x192.png',
+            badge: 'https://raw.githubusercontent.com/jirka22med/Lekarsky-Protokol-Jirika-2.cz/11b61ddd0c3cf63536e88c9ffdc2acb93321f095/image_72x72.png',
+            tag: 'daily-reminder',
+            requireInteraction: false,
+            vibrate: [200, 100, 200],
+            data: {
+                type: 'daily-reminder',
+                timestamp: Date.now(),
+                url: window.location.href
+            }
+        });
+
+        console.log("📤 Denní přehled léků odeslán");
+    } catch (error) {
+        console.error("❌ Chyba při odesílání denního přehledu:", error);
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // 🚀 AUTOMATICKÁ INICIALIZACE PO NAČTENÍ FIREBASE
 // ═══════════════════════════════════════════════════════════════
 
-// Počkáme na načtení Firebase a pak inicializujeme FCM
 document.addEventListener('DOMContentLoaded', () => {
-    // Počkáme chvíli, aby se Firebase stihlo inicializovat
     setTimeout(() => {
         if (typeof firebase !== 'undefined' && firebase.messaging) {
             window.initializeFCMNotifications().then(success => {
                 if (success) {
                     setupFCMMessageListener();
                     scheduleDailyReminder();
-                    console.log("🚀 JIŘÍKŮV FCM MODUL: Plně operační na warp 9.99! 🖖");
+                    console.log("🚀 JIŘÍKŮV FCM MODUL V2.0: Plně operační na warp 9.99! 🖖");
                 }
             });
         } else {
             console.warn("⚠️ Firebase Messaging není k dispozici. Zkontroluj připojení skriptů.");
         }
-    }, 2000); // Počkáme 2 sekundy na inicializaci Firebase
+    }, 2000);
 });
 
-console.log("✅ jirkova-mes-zprava-o-lecich.js načten a připraven k akci!");
+console.log("✅ jirkova-mes-zprava-o-lecich.js V2.0 načten a připraven k akci!");
